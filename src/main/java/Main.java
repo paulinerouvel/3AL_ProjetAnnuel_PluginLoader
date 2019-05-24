@@ -373,20 +373,9 @@ public class Main {
         if(Integer.parseInt(choice) >= 0 && Integer.parseInt(choice) < pluginsList.length) {
 
 
-
-
-
-            System.out.println(names[Integer.parseInt(choice)]);
-
             File pluginToDelete = new File("src/main/ressources/plugins/PluginA.jar");
-            System.out.println(pluginToDelete.exists());
-            System.out.println(pluginToDelete.isFile());
             pluginToDelete.deleteOnExit();
 
-
-
-            final File[] fichiers = pluginToDelete.listFiles();
-            System.out.println(fichiers.length);
 
             if(pluginToDelete.delete()){
                 System.out.println("Plugin désinstallé !");
