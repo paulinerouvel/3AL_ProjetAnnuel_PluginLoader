@@ -1,9 +1,6 @@
 package fr.wastemart.maven.pluginmanager;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
@@ -19,7 +16,8 @@ public class PluginLoader {
 		//Plugins Dir
 		File dir = new File(path);
 
-		final File[] pluginsList = dir.listFiles();
+		//final File[] pluginsList = dir.listFiles();
+		File[] pluginsList = dir.listFiles((dir1, name) -> name.endsWith(".jar"));
 
         //create a generic list of plugins => we don't know the classes of the plugins
 		final Class<?>[] pluginsClasses = new Class<?>[pluginsList.length];
@@ -97,8 +95,8 @@ public class PluginLoader {
     public static String[] getPluginsNames(String path) throws ClassNotFoundException, IOException{
 		File dir = new File(path);
 
-		final File[] pluginsList = dir.listFiles();
-
+		//final File[] pluginsList = dir.listFiles();
+		File[] pluginsList = dir.listFiles((dir1, name) -> name.endsWith(".jar"));
 
 		String[] names = new String[pluginsList.length];
 
