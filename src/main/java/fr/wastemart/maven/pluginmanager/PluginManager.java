@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 
 public class PluginManager {
@@ -19,10 +18,10 @@ public class PluginManager {
     private static Plugin[] plugins;
     private static String[] pluginsName;
 
-    private static String path = "plugins";
+    private static String pluginFolder = "plugins";
     private static String confFile = "activatedPlugins.conf";
 
-	public static void initialization(){
+    public static void initialization(){
         try {
 
             System.out.println(confFile.length());
@@ -54,12 +53,12 @@ public class PluginManager {
         try {
 
             /**Chargement des plugins*/
-            Class<?>[] pluginsClasses = PluginLoader.loadPluginsDirectory(getPath());
+            Class<?>[] pluginsClasses = PluginLoader.loadPluginsDirectory(getPluginFolder());
             plugins = PluginLoader.initAsPlugin(pluginsClasses);
 
             /**Chargement des noms des plugins*/
 
-            pluginsName = PluginLoader.getPluginsNames(path);
+            pluginsName = PluginLoader.getPluginsNames(pluginFolder);
 
         } catch (InstantiationException e) {
             e.printStackTrace();
@@ -72,25 +71,17 @@ public class PluginManager {
         }
     }
 
-	public static Boolean activatePlugin(String[] pluginsName, Integer choice) throws Exception {
-        ArrayList<String> confLine = new ArrayList<String>();
+	public static Boolean activatePlugin(Integer choice) throws Exception {
+        ArrayList<String> configFile = readConfFile();
 
-        BufferedReader reader = new BufferedReader(new FileReader(confFile));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            confLine.add(line);
-        }
-        reader.close();
-
-        if(!confLine.contains(pluginsName[choice])){
+        if(!configFile.contains(pluginsName[choice])){
             BufferedWriter writer = new BufferedWriter(new FileWriter(confFile));
-            for (String aConfLine : confLine) {
-                writer.append(aConfLine);
+            for (String confLine : configFile) {
+                writer.append(confLine);
                 writer.newLine();
             }
             writer.append(pluginsName[choice]);
             writer.close();
-
         }
         else{
             return false;
@@ -101,70 +92,62 @@ public class PluginManager {
         return true;
     }
 
-    public static void desactivatePlugin(){
-        if(pluginsName != null){
+    public static Boolean desactivatePlugin(Integer choice) throws Exception {
+        ArrayList<String> configFile = readConfFile();
+        loadPlugins();
 
-            String choice;
-            int choiceNb;
+        if(configFile.contains(pluginsName[choice])){
+            for (String confLine : configFile) {
+                System.out.println(confLine);
+                if (confLine.equals(pluginsName[choice])) {
+                    System.out.println("Do compare");
+                    System.out.println(confLine + "  " + pluginsName[choice]);
+                    writeConfFile(confLine);
+                } else {
+                    System.out.println("Does not compare with"+pluginsName[choice]);
+                    System.out.println(confLine.equals(pluginsName[choice]));
+                    //writer.append("");
+                }
 
-            System.out.println("Veuillez séléctionner le plugins à désactiver : \n");
-
-            for(int j = 0; j< pluginsName.length; j++){
-                System.out.println(j + " - " + pluginsName[j]);
             }
 
-            Scanner sc = new Scanner(System.in);
-            choice = sc.nextLine();
-
-            choiceNb = Integer.parseInt(choice);
-
-            if(choiceNb < 0 || choiceNb >= pluginsName.length){
-                System.out.println("Saisie invalide");
-            } else {
-                try {
-                    ArrayList<String> confLine = new ArrayList<String>();
-
-                    BufferedReader reader = new BufferedReader(new FileReader(confFile));
-                    String line;
-
-                    while ((line = reader.readLine()) != null) {
-                        confLine.add(line);
-                    }
-
-                    reader.close();
-
-                    if(confLine.contains(pluginsName[choiceNb]) == true){
-                        BufferedWriter writer = new BufferedWriter(new FileWriter(confFile));
-                        writer.flush();
-
-                        for(int j = 0; j < confLine.size(); j++){
-                            if(confLine.get(j).compareTo( pluginsName[choiceNb]) == 1){
-                                System.out.println(confLine.get(j) + "  " + pluginsName[choiceNb]);
-                                writer.append(confLine.get(j));
-
-                                writer.newLine();
-                            }else{
-                                //writer.append("");
-                            }
-
-                        }
-                        writer.close();
-
-                        System.out.println("Plugin désactivé !");
-                        plugins[choiceNb].close();
-                    }
-                    else{
-                        System.out.println("Plugin déjà désactivé !");
-                    }
-                }
-                catch (Exception e){
-                    System.out.println("Error while writing/reading in the configuration file");
-                }
-            }
+            plugins[choice].close();
+            return true;
+        } else{
+            return false;
         }
-        else{
-            System.out.println("Vous n'avez aucun plugins, télécharger en un ! ");
+
+    }
+
+    public static ArrayList<String> readConfFile() throws Exception {
+        createPluginConfigFile();
+
+        ArrayList<String> confLine = new ArrayList<String>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(getConfFile()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            confLine.add(line);
         }
+        reader.close();
+        return confLine;
+    }
+
+    public static void writeConfFile(String string) throws Exception {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(getConfFile()));
+        writer.flush();
+        writer.append(string);
+        writer.newLine();
+        writer.close();
+    }
+
+
+    public static File[] fetchLocalPlugins() {
+        File dir = new File(getPluginFolder());
+        if(dir.isDirectory()) {
+            return dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".jar"));
+        }
+        else return null;
     }
 
     public static ArrayList<String> fetchOnlinePlugins(String url) throws Exception {
@@ -183,29 +166,23 @@ public class PluginManager {
         return pluginsAvailable;
     }
 
-    public static Boolean installPlugin(String url, String pluginName) throws IOException {
+    public static void installPlugin(String url, String pluginName) throws Exception {
+        setup();
+
         url += pluginName;
 
         try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
-             FileOutputStream fileOS = new FileOutputStream(getPath() + "/" + pluginName)) {
+             FileOutputStream fileOS = new FileOutputStream(getPluginFolder() + "/" + pluginName)) {
             byte data[] = new byte[1024];
             int byteContent;
             while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
                 fileOS.write(data, 0, byteContent);
             }
-            return true;
-        } catch (IOException e) {
-            // Logger.reportError(e);
-            e.printStackTrace();
         }
-        System.out.println("Error occurred");
-        return false;
     }
 
     public static Boolean uninstallPlugin(Integer choice) throws Exception {
-        File dir = new File(getPath());
-
-        final File[] pluginsList = dir.listFiles();
+        final File[] pluginsList = fetchLocalPlugins();
 
         if(choice >= 0 && choice < pluginsList.length) {
 
@@ -228,12 +205,38 @@ public class PluginManager {
 
     }
 
-    public static String getPath() {
-        return PluginManager.path;
+    public static void setup() throws Exception {
+        createPluginFolder();
+        createPluginConfigFile();
     }
 
-    public static void setPath(String path) {
-        PluginManager.path = path;
+    public static Boolean createPluginFolder() throws IOException {
+        File pluginFolder = new File(getPluginFolder());
+        if (!pluginFolder.isDirectory()) {
+            //return pluginFolder.canWrite(); // The directory is writable
+        //} else {
+            return pluginFolder.mkdir(); // Folder is created
+
+        }
+        return false;
+    }
+
+    public static Boolean createPluginConfigFile() throws IOException {
+        File configFile = new File(getConfFile());
+        if (!configFile.isFile()) {
+            //return configFile.canWrite(); // The file is writable
+        //} else {
+            return configFile.createNewFile(); // File is created
+        }
+        return false;
+    }
+
+    public static String getPluginFolder() {
+        return PluginManager.pluginFolder;
+    }
+
+    public static void setPluginFolder(String pluginFolder) {
+        PluginManager.pluginFolder = pluginFolder;
     }
 
     public static String getConfFile() {

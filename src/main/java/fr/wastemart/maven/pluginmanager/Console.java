@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import static fr.wastemart.maven.pluginmanager.PluginLoader.getPluginsNames;
 import static fr.wastemart.maven.pluginmanager.PluginManager.*;
 
 public class Console {
@@ -14,7 +13,7 @@ public class Console {
         String confFile = "activatedPlugins.conf";
 
         setConfFile(confFile);
-        setPath(path);
+        setPluginFolder(path);
 
         //initialization();
 
@@ -35,7 +34,8 @@ public class Console {
 
         while (choice.compareTo("5") != 0){
             try {
-                String[] names;
+                File[] names;
+                Integer choiceNb;
                 switch (choice) {
                     case "1":
                         ArrayList<String> availablePlugins = fetchOnlinePlugins(url);
@@ -52,15 +52,14 @@ public class Console {
                         installPlugin(url, availablePlugins.get(Integer.parseInt(choice)));
                         break;
                     case "2":
-                        File dir = new File(getPath());
+                        File dir = new File(getPluginFolder());
 
                         final File[] pluginsList = dir.listFiles();
 
-                        names = new String[pluginsList.length];
+                        names = new File[pluginsList.length];
 
                         for (int i=0; i<pluginsList.length; i++){
-                            names[i] = pluginsList[i].getAbsolutePath();
-                            System.out.println(i + " - " + names[i]);
+                            System.out.println(i + " - " + names[i].getAbsolutePath());
                         }
 
                         sc = new Scanner(System.in);
@@ -70,13 +69,12 @@ public class Console {
                     case "3":
                         loadPlugins();
 
-                        names = getPluginsNames("plugins");
-                        int choiceNb;
+                        names = fetchLocalPlugins();
 
                         System.out.println("Veuillez séléctionner le plugins à activer : \n");
 
                         for(int j = 0; j< names.length; j++){
-                            System.out.println(j + " - " + names[j]);
+                            System.out.println(j + " - " + names[j].getAbsolutePath());
                         }
 
                         sc = new Scanner(System.in);
@@ -84,11 +82,25 @@ public class Console {
 
                         choiceNb = Integer.parseInt(choice);
 
-                        activatePlugin(names, choiceNb);
+                        activatePlugin(choiceNb);
                         break;
                     case "4":
-                        desactivatePlugin();
+                        names = fetchLocalPlugins();
+
+                        System.out.println("Veuillez séléctionner le plugins à désactiver : \n");
+
+                        for(int j = 0; j< names.length; j++){
+                            System.out.println(j + " - " + names[j].getAbsolutePath());
+                        }
+
+                        sc = new Scanner(System.in);
+                        choice = sc.nextLine();
+
+                        choiceNb = Integer.parseInt(choice);
+
+                        desactivatePlugin(choiceNb);
                         break;
+
                     default:
                         System.out.println("Choix invalide !");
                         break;

@@ -6,7 +6,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="3AL_ProjetAnnuel_PluginLoader" />
+        <module name="pluginloader" />
+        <module name="PluginLoader" />
       </profile>
     </annotationProcessing>
   </component>
