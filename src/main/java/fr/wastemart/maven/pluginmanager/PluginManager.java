@@ -18,11 +18,24 @@ public class PluginManager {
     private static Plugin[] plugins;
     private static String[] pluginsName;
 
-    private static String pluginFolder = "plugins";
-    private static String confFile = "activatedPlugins.conf";
+    private static String pluginFolder;
+    private static String confFile;
 
-    public static void initialization(){
+    public static void initialization(String configFile, String pluginFolder){
         try {
+
+            if(!new File(configFile).isFile()){
+                configFile = System.getProperty("user.dir")+"/activatedPlugins.conf";
+            }
+            if(!new File(pluginFolder).isDirectory()) {
+                pluginFolder = System.getProperty("user.dir")+"/plugins/";
+            }
+
+            setConfFile(configFile);
+            setPluginFolder(pluginFolder);
+
+            createPluginConfigFile();
+            createPluginFolder();
 
             System.out.println(confFile.length());
             if (confFile.length() != 0) {
@@ -72,8 +85,12 @@ public class PluginManager {
     }
 
 	public static Boolean activatePlugin(Integer choice) throws Exception {
+        createPluginConfigFile();
         ArrayList<String> configFile = readConfFile();
 
+        loadPlugins();
+
+        System.out.println("3");
         if(!configFile.contains(pluginsName[choice])){
             BufferedWriter writer = new BufferedWriter(new FileWriter(confFile));
             for (String confLine : configFile) {
@@ -88,21 +105,29 @@ public class PluginManager {
         }
 
         loadPlugins();
+
         plugins[choice].run();
         return true;
     }
 
     public static Boolean desactivatePlugin(Integer choice) throws Exception {
+        createPluginConfigFile();
         ArrayList<String> configFile = readConfFile();
         loadPlugins();
 
+        System.out.println("pluginsName");
+
         if(configFile.contains(pluginsName[choice])){
+            BufferedWriter writer = new BufferedWriter(new FileWriter(getConfFile()));
+            writer.flush();
+            System.out.println("Config file do contain the file");
             for (String confLine : configFile) {
+                System.out.println("Conf line:");
                 System.out.println(confLine);
-                if (confLine.equals(pluginsName[choice])) {
+                if (!confLine.equals(pluginsName[choice])) {
                     System.out.println("Do compare");
                     System.out.println(confLine + "  " + pluginsName[choice]);
-                    writeConfFile(confLine);
+                    writeConfFile(writer, confLine);
                 } else {
                     System.out.println("Does not compare with"+pluginsName[choice]);
                     System.out.println(confLine.equals(pluginsName[choice]));
@@ -110,6 +135,8 @@ public class PluginManager {
                 }
 
             }
+
+            writer.close();
 
             plugins[choice].close();
             return true;
@@ -133,12 +160,11 @@ public class PluginManager {
         return confLine;
     }
 
-    public static void writeConfFile(String string) throws Exception {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(getConfFile()));
-        writer.flush();
+    public static void writeConfFile(BufferedWriter writer, String string) throws Exception {
+
         writer.append(string);
         writer.newLine();
-        writer.close();
+
     }
 
 
