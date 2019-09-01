@@ -21,67 +21,53 @@ public class PluginManager {
     private static String pluginFolder;
     private static String confFile;
 
-    public static void initialization(String configFile, String pluginFolder){
-        try {
+    public static void initialization(String configFile, String pluginFolder)
+    throws Exception {
 
-            if(!new File(configFile).isFile()){
-                configFile = System.getProperty("user.dir")+"/activatedPlugins.conf";
-            }
-            if(!new File(pluginFolder).isDirectory()) {
-                pluginFolder = System.getProperty("user.dir")+"/plugins/";
-            }
 
-            setConfFile(configFile);
-            setPluginFolder(pluginFolder);
-
-            createPluginConfigFile();
-            createPluginFolder();
-
-            System.out.println(confFile.length());
-            if (confFile.length() != 0) {
-                loadPlugins();
-
-                BufferedReader reader = new BufferedReader(new FileReader(confFile));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    for (int i = 0; i < plugins.length; i++) {
-                        System.out.println(pluginsName[i]);
-                        if (pluginsName[i].compareTo(line) == 0) {
-                            plugins[i].run();
-                        }
-                    }
-
-                }
-                reader.close();
-            }
+        if(!new File(configFile).isFile()){
+            configFile = System.getProperty("user.dir")+"/activatedPlugins.conf";
         }
-        catch (Exception e)
-        {
-            System.err.format("Exception occurred trying to read '%s'.", confFile);
-            e.printStackTrace();
+        if(!new File(pluginFolder).isDirectory()) {
+            pluginFolder = System.getProperty("user.dir")+"/plugins/";
+        }
+
+        setConfFile(configFile);
+        setPluginFolder(pluginFolder);
+
+        createPluginConfigFile();
+        createPluginFolder();
+
+        System.out.println(confFile.length());
+        if (confFile.length() != 0) {
+            loadPlugins();
+
+            BufferedReader reader = new BufferedReader(new FileReader(confFile));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                for (int i = 0; i < plugins.length; i++) {
+                    System.out.println(pluginsName[i]);
+                    if (pluginsName[i].compareTo(line) == 0) {
+                        plugins[i].run();
+                    }
+                }
+
+            }
+            reader.close();
         }
     }
 
-	public static void loadPlugins() {
-        try {
 
-            /**Chargement des plugins*/
-            Class<?>[] pluginsClasses = PluginLoader.loadPluginsDirectory(getPluginFolder());
-            plugins = PluginLoader.initAsPlugin(pluginsClasses);
+	public static void loadPlugins() throws Exception {
 
-            /**Chargement des noms des plugins*/
+        /**Chargement des plugins*/
+        Class<?>[] pluginsClasses = PluginLoader.loadPluginsDirectory(getPluginFolder());
+        plugins = PluginLoader.initAsPlugin(pluginsClasses);
 
-            pluginsName = PluginLoader.getPluginsNames(pluginFolder);
+        /**Chargement des noms des plugins*/
 
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        pluginsName = PluginLoader.getPluginsNames(pluginFolder);
+
     }
 
 	public static Boolean activatePlugin(Integer choice) throws Exception {
